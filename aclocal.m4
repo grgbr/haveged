@@ -1270,15 +1270,20 @@ dnl lt_sysroot will always be passed unquoted.  We quote it here
 dnl in case the user passed a directory name.
 lt_sysroot=
 case $with_sysroot in #(
- yes)
+ no)
    if test yes = "$GCC"; then
      lt_sysroot=`$CC --print-sysroot 2>/dev/null`
+     # Treat "/" the same a an unset sysroot. It seems to be more
+     # compatible across host platforms that way!?
+     if test "$lt_sysroot" = /; then
+       lt_sysroot=
+     fi
    fi
+   ;; #(
+ yes|''|/)
    ;; #(
  /*)
    lt_sysroot=`echo "$with_sysroot" | sed -e "$sed_quote_subst"`
-   ;; #(
- no|'')
    ;; #(
  *)
    AC_MSG_RESULT([$with_sysroot])
@@ -2881,9 +2886,6 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # Add ABI-specific directories to the system library path.
-  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
-
   # Ideally, we could use ldconfig to report *all* directores which are
   # searched for libraries, however this is still not possible.  Aside from not
   # being certain /sbin/ldconfig is available, command
@@ -2892,7 +2894,7 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
   # appending ld.so.conf contents (and includes) to the search path.
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -7544,7 +7546,7 @@ if AC_TRY_EVAL(ac_compile); then
   for p in `eval "$output_verbose_link_cmd"`; do
     case $prev$p in
 
-    -L* | -R* | -l*)
+    -L* | -R* | -l* | */libclang_rt.*.a)
        # Some compilers place space between "-{L,R}" and the path.
        # Remove the space.
        if test x-L = "$p" ||
